@@ -88,6 +88,16 @@ function asNumber(value: unknown, fallback = 0): number {
   return fallback;
 }
 
+function asBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "t" || normalized === "1" || normalized === "yes" || normalized === "y";
+  }
+  return false;
+}
+
 function getSessionSecretValidationError(): string | null {
   const secret = getAdminAuthEnvConfig().sessionSecret;
   if (!secret) {
@@ -239,7 +249,7 @@ async function findActiveUserByUsername(
     id: asString(row.id),
     username: asString(row.username),
     password_hash: asString(row.password_hash),
-    is_active: Boolean(row.is_active),
+    is_active: asBoolean(row.is_active),
   };
 }
 
@@ -517,7 +527,7 @@ export async function verifySessionToken(token: string | undefined): Promise<Ses
 
     const expiresAtIso = asIsoDateString(row.expires_at);
     const expiresAtMs = Date.parse(expiresAtIso);
-    if (!Number.isFinite(expiresAtMs) || expiresAtMs <= nowMs || row.is_active !== true) {
+    if (!Number.isFinite(expiresAtMs) || expiresAtMs <= nowMs || !asBoolean(row.is_active)) {
       await client.query("DELETE FROM admin_sessions WHERE id = $1", [asString(row.id)]);
       return null;
     }
