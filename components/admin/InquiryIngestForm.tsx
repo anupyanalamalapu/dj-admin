@@ -178,7 +178,21 @@ export default function InquiryIngestForm({ workspaceOptions = [] }: InquiryInge
       if (payload.ocrStatus === "manual_required") {
         query.set("ocr", "manual");
       }
-      router.push(`/admin/workspace/${payload.eventId}${query.toString() ? `?${query.toString()}` : ""}`);
+      const workspaceCheckResponse = await fetch(`/api/admin/workspace/${encodeURIComponent(payload.eventId)}`, {
+        cache: "no-store",
+      });
+      if (!workspaceCheckResponse.ok) {
+        const workspaceCheckParsed = await parseJsonResponseSafe<{ error?: string }>(workspaceCheckResponse);
+        setStep("redirect", "error");
+        setError(
+          workspaceCheckParsed.data?.error ||
+            workspaceCheckParsed.error ||
+            "Workspace was not found after processing. Please retry context ingest."
+        );
+        return;
+      }
+
+      router.push(`/admin/workspace/${encodeURIComponent(payload.eventId)}${query.toString() ? `?${query.toString()}` : ""}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error.");

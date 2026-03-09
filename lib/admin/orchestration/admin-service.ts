@@ -2080,7 +2080,7 @@ function hasUsableClientName(value?: string): boolean {
 }
 
 function hasWorkspaceCreationIdentity(extracted: ExtractedInquiry): boolean {
-  return hasUsableClientName(extracted.clientName) && hasRequiredWorkspaceContact(extracted);
+  return hasRequiredWorkspaceContact(extracted);
 }
 
 function primaryClientContact(client: Client): string {
@@ -3606,7 +3606,7 @@ export async function ingestInquiry(args: {
         ? " For text/iMessage screenshots, either select `Add To Workspace` or provide a phone/email/Instagram contact before processing."
         : "";
       throw new Error(
-        `Could not map this context to a workspace. Please either choose an existing workspace, or provide both a client name and contact info (email/phone/Instagram) to create a new workspace.${routingHint} Extracted payload: ${extractedDebug}.${ocrDebug}`
+        `Could not map this context to a workspace. Please either choose an existing workspace, or provide at least one contact method (email/phone/Instagram) so a new workspace can be created.${routingHint} Event time is not required for workspace creation. Extracted payload: ${extractedDebug}.${ocrDebug}`
       );
     }
     client = {

@@ -93,7 +93,7 @@ My name is Lavanya and we're looking for a DJ for our wedding.
 Can you share your availability and pricing?`,
           uploadedFile: null,
         }),
-      /provide both a client name and contact info/i
+      /provide at least one contact method/i
     );
   });
 
@@ -114,6 +114,25 @@ You can text me at 917-555-2048.`,
     assert.ok(workspace);
     assert.equal(workspace?.client.fullName, "Lavanya");
     assert.match((workspace?.client.phone || "").replace(/\D+/g, ""), /9175552048$/);
+  });
+
+  it("allows creating a new workspace when only contact info is present (name missing)", async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "dj-admin-test-"));
+    process.env.ADMIN_DATA_DIR = tempDir;
+    process.env.ADMIN_ENABLE_CODEX_AI = "false";
+
+    const result = await ingestInquiry({
+      messageText: `Hi there,
+
+We are looking for DJ services.
+You can reach me at anjali@example.com.`,
+      uploadedFile: null,
+    });
+
+    const workspace = await getWorkspaceByEventId(result.eventId);
+    assert.ok(workspace);
+    assert.equal(workspace?.client.email, "anjali@example.com");
+    assert.equal(workspace?.client.fullName, "Unknown Client");
   });
 
   it("supports forcing context into a selected workspace when contact details are missing", async () => {
