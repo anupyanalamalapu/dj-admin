@@ -41,9 +41,10 @@ interface WorkspaceOption {
 
 interface InquiryIngestFormProps {
   workspaceOptions?: WorkspaceOption[];
+  initialError?: string;
 }
 
-export default function InquiryIngestForm({ workspaceOptions = [] }: InquiryIngestFormProps) {
+export default function InquiryIngestForm({ workspaceOptions = [], initialError = "" }: InquiryIngestFormProps) {
   const router = useRouter();
   const [messageText, setMessageText] = useState("");
   const [upload, setUpload] = useState<File | null>(null);
@@ -51,7 +52,7 @@ export default function InquiryIngestForm({ workspaceOptions = [] }: InquiryInge
   const [manualEmail, setManualEmail] = useState("");
   const [manualPhone, setManualPhone] = useState("");
   const [manualInstagramHandle, setManualInstagramHandle] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
   const [processingNote, setProcessingNote] = useState("");
   const [steps, setSteps] = useState<Record<StepKey, StepStatus>>(makeInitialSteps());

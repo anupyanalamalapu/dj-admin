@@ -1,13 +1,35 @@
 import InquiryIngestForm from "@/components/admin/InquiryIngestForm";
 import { listWorkspaces } from "@/lib/admin/orchestration/admin-service";
 
-export default async function AdminInquiryPage() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+interface AdminInquiryPageProps {
+  searchParams?: {
+    error?: string;
+    eventId?: string;
+  };
+}
+
+function errorFromSearchParams(searchParams?: { error?: string; eventId?: string }): string {
+  if (searchParams?.error === "workspace_not_found") {
+    const eventId = (searchParams.eventId || "").trim();
+    return eventId
+      ? `Workspace ${eventId} was not found. Context was saved; select an existing workspace or reprocess this inquiry.`
+      : "Workspace was not found. Context was saved; select an existing workspace or reprocess this inquiry.";
+  }
+  return "";
+}
+
+export default async function AdminInquiryPage({ searchParams }: AdminInquiryPageProps) {
   const workspaces = await listWorkspaces();
   const workspaceOptions = workspaces.map((workspace) => ({
     eventId: workspace.eventId,
     label: workspace.workspaceTitle || `${workspace.clientName} - ${workspace.eventType || "Event"}`,
     contact: workspace.primaryContact || workspace.clientEmail,
   }));
+
+  const initialError = errorFromSearchParams(searchParams);
 
   return (
     <section className="space-y-4">
@@ -17,7 +39,7 @@ export default async function AdminInquiryPage() {
           Paste or upload new client context to create or update a workspace.
         </p>
       </div>
-      <InquiryIngestForm workspaceOptions={workspaceOptions} />
+      <InquiryIngestForm workspaceOptions={workspaceOptions} initialError={initialError} />
     </section>
   );
 }
