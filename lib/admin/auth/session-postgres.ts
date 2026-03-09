@@ -73,6 +73,12 @@ function asString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+function asIsoDateString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value instanceof Date) return value.toISOString();
+  return "";
+}
+
 function asNumber(value: unknown, fallback = 0): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
@@ -509,13 +515,14 @@ export async function verifySessionToken(token: string | undefined): Promise<Ses
     const row = result.rows[0];
     if (!row) return null;
 
-    const expiresAtMs = Date.parse(asString(row.expires_at));
+    const expiresAtIso = asIsoDateString(row.expires_at);
+    const expiresAtMs = Date.parse(expiresAtIso);
     if (!Number.isFinite(expiresAtMs) || expiresAtMs <= nowMs || row.is_active !== true) {
       await client.query("DELETE FROM admin_sessions WHERE id = $1", [asString(row.id)]);
       return null;
     }
 
-    const lastSeenMs = Date.parse(asString(row.last_seen_at));
+    const lastSeenMs = Date.parse(asIsoDateString(row.last_seen_at));
     const shouldTouch = !Number.isFinite(lastSeenMs) || nowMs - lastSeenMs >= SESSION_TOUCH_INTERVAL_MS;
     const nextExpiryIso = new Date(nowMs + SESSION_TTL_MS).toISOString();
     if (shouldTouch) {
@@ -525,7 +532,7 @@ export async function verifySessionToken(token: string | undefined): Promise<Ses
         asString(row.id),
       ]);
     }
-    const effectiveExpiryIso = shouldTouch ? nextExpiryIso : asString(row.expires_at);
+    const effectiveExpiryIso = shouldTouch ? nextExpiryIso : expiresAtIso;
     return {
       userId: asString(row.user_id),
       username: asString(row.username),
