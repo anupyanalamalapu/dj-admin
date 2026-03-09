@@ -16,6 +16,11 @@ export function getAdminDataRoot(): string {
     return remapReadOnlyRoot(resolvedConfigured);
   }
 
+  // In production/serverless we keep runtime files under /tmp.
+  if (process.env.NODE_ENV === "production") {
+    return path.join("/tmp", "data", "admin");
+  }
+
   return remapReadOnlyRoot(path.join(process.cwd(), "data", "admin"));
 }
 
