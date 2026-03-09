@@ -65,6 +65,7 @@ function profileFromSnapshot(snapshot: WorkspaceSnapshot): WorkspaceProfile {
 interface WorkspaceMetaDraft {
   workspaceStartAt: string;
   workspaceEndAt: string;
+  dateOnly: boolean;
   stage: BookingStage;
   venue: string;
   contractTotalAmount: string;
@@ -77,12 +78,20 @@ function toLocalDateTimeInputValue(timestamp?: number): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function toLocalDateInputValue(timestamp?: number): string {
+  return timestampToIsoDate(timestamp) || "";
+}
+
 function parseLocalDateTimeInput(value: string): number | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   const parsed = new Date(trimmed);
   const timestamp = parsed.getTime();
   return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+function parseLocalDateInput(value: string): number | undefined {
+  return parseDateToTimestamp(value.trim());
 }
 
 function endOfDayTimestamp(value?: number): number | undefined {
@@ -93,26 +102,49 @@ function endOfDayTimestamp(value?: number): number | undefined {
   return date.getTime();
 }
 
+function hasExplicitEventTimes(snapshot: WorkspaceSnapshot): boolean {
+  const rows = snapshot.contract?.dynamicFields.eventDetails || [];
+  if (rows.some((row) => Boolean((row.time || "").trim()))) {
+    return true;
+  }
+  const duration = (snapshot.event.duration || "").trim();
+  if (!duration) return false;
+  return /(\d{1,2}:\d{2}|\d{1,2}\s*(am|pm))/i.test(duration);
+}
+
 function workspaceMetaFromSnapshot(snapshot: WorkspaceSnapshot): WorkspaceMetaDraft {
   const contractTotal = snapshot.contract?.dynamicFields.totalAmount || 0;
+  const dateOnly = !hasExplicitEventTimes(snapshot);
+  const eventRows = snapshot.contract?.dynamicFields.eventDetails || [];
+  const contractStartDate = eventRows[0]?.date;
+  const contractEndDate = eventRows[eventRows.length - 1]?.date;
+  const canonicalStartIso =
+    snapshot.event.eventDate ||
+    contractStartDate ||
+    timestampToIsoDate(snapshot.event.workspaceStartTimestamp) ||
+    timestampToIsoDate(snapshot.event.eventDateTimestamp);
+  const canonicalEndIso =
+    contractEndDate ||
+    snapshot.event.eventDate ||
+    timestampToIsoDate(snapshot.event.workspaceEndTimestamp) ||
+    canonicalStartIso;
   const fallbackStartTs =
+    parseDateToTimestamp(canonicalStartIso) ||
     snapshot.event.workspaceStartTimestamp ||
-    parseDateToTimestamp(snapshot.event.eventDate) ||
     snapshot.event.eventDateTimestamp ||
-    parseDateToTimestamp(snapshot.contract?.dynamicFields.eventDetails[0]?.date);
-  const fallbackEndDate =
-    snapshot.contract?.dynamicFields.eventDetails[snapshot.contract?.dynamicFields.eventDetails.length - 1]?.date ||
-    snapshot.event.eventDate;
+    parseDateToTimestamp(contractStartDate);
   const fallbackEndTs =
+    endOfDayTimestamp(parseDateToTimestamp(canonicalEndIso) || fallbackStartTs) ||
     snapshot.event.workspaceEndTimestamp ||
-    endOfDayTimestamp(parseDateToTimestamp(fallbackEndDate) || snapshot.event.eventDateTimestamp);
+    endOfDayTimestamp(snapshot.event.eventDateTimestamp || fallbackStartTs);
   const normalizedEndTs =
     typeof fallbackStartTs === "number" && typeof fallbackEndTs === "number" && fallbackEndTs < fallbackStartTs
       ? endOfDayTimestamp(fallbackStartTs)
       : fallbackEndTs;
   return {
-    workspaceStartAt: toLocalDateTimeInputValue(fallbackStartTs),
-    workspaceEndAt: toLocalDateTimeInputValue(normalizedEndTs),
+    workspaceStartAt: dateOnly ? toLocalDateInputValue(fallbackStartTs) : toLocalDateTimeInputValue(fallbackStartTs),
+    workspaceEndAt: dateOnly ? toLocalDateInputValue(normalizedEndTs) : toLocalDateTimeInputValue(normalizedEndTs),
+    dateOnly,
     stage: snapshot.event.stageOverride || snapshot.event.stage,
     venue: snapshot.event.venue || "",
     contractTotalAmount: String(contractTotal),
@@ -254,12 +286,12 @@ export default function WorkspaceEditor({ initial, ocrManualMode }: WorkspaceEdi
   const headerPrimaryName = (profile.primaryClientName || snapshot.client.fullName || "Client").trim();
   const headerPrimaryFirstName = headerPrimaryName.split(/\s+/)[0] || "Client";
   const canonicalStartTs =
-    snapshot.event.workspaceStartTimestamp ||
     parseDateToTimestamp(snapshot.event.eventDate) ||
+    snapshot.event.workspaceStartTimestamp ||
     snapshot.event.eventDateTimestamp;
   const titleDate = formatDateLong({
     timestamp: canonicalStartTs,
-    isoDate: timestampToIsoDate(snapshot.event.workspaceStartTimestamp) || snapshot.event.eventDate,
+    isoDate: snapshot.event.eventDate || timestampToIsoDate(snapshot.event.workspaceStartTimestamp),
     fallback: "TBD",
   });
   const workspaceTitle = `${headerPrimaryFirstName}'s ${snapshot.event.eventType || "Event"} on ${titleDate}`;
@@ -499,8 +531,17 @@ export default function WorkspaceEditor({ initial, ocrManualMode }: WorkspaceEdi
   }
 
   async function approveWorkspaceMetaSection() {
-    const startTs = parseLocalDateTimeInput(workspaceMeta.workspaceStartAt);
-    const endTs = parseLocalDateTimeInput(workspaceMeta.workspaceEndAt);
+    const rawStartTs = workspaceMeta.dateOnly
+      ? parseLocalDateInput(workspaceMeta.workspaceStartAt)
+      : parseLocalDateTimeInput(workspaceMeta.workspaceStartAt);
+    const rawEndTs = workspaceMeta.dateOnly
+      ? endOfDayTimestamp(parseLocalDateInput(workspaceMeta.workspaceEndAt || workspaceMeta.workspaceStartAt))
+      : parseLocalDateTimeInput(workspaceMeta.workspaceEndAt);
+    const startTs = rawStartTs;
+    const endTs =
+      typeof rawStartTs === "number" && typeof rawEndTs === "number" && rawEndTs < rawStartTs
+        ? endOfDayTimestamp(rawStartTs)
+        : rawEndTs;
     const total = Number(workspaceMeta.contractTotalAmount);
     await patch(
       {
@@ -761,18 +802,18 @@ export default function WorkspaceEditor({ initial, ocrManualMode }: WorkspaceEdi
           <h3 className="mb-2 text-sm font-semibold text-white">Workspace Profile</h3>
           <div className="grid gap-2 md:grid-cols-4">
             <label className="text-[11px] font-medium text-slate-300">
-              Start (Date/Time)
+              {workspaceMeta.dateOnly ? "Start Date" : "Start (Date/Time)"}
               <input
-                type="datetime-local"
+                type={workspaceMeta.dateOnly ? "date" : "datetime-local"}
                 value={workspaceMeta.workspaceStartAt}
                 onChange={(event) => setWorkspaceMetaField("workspaceStartAt", event.target.value)}
                 className="mt-1 w-full rounded border border-white/20 bg-slate-900 px-2 py-1 text-xs text-white"
               />
             </label>
             <label className="text-[11px] font-medium text-slate-300">
-              End (Date/Time)
+              {workspaceMeta.dateOnly ? "End Date" : "End (Date/Time)"}
               <input
-                type="datetime-local"
+                type={workspaceMeta.dateOnly ? "date" : "datetime-local"}
                 value={workspaceMeta.workspaceEndAt}
                 onChange={(event) => setWorkspaceMetaField("workspaceEndAt", event.target.value)}
                 className="mt-1 w-full rounded border border-white/20 bg-slate-900 px-2 py-1 text-xs text-white"
