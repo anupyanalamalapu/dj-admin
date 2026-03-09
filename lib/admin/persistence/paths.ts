@@ -2,10 +2,17 @@ import path from "path";
 
 export function getAdminDataRoot(): string {
   const configured = (process.env.ADMIN_DATA_DIR || "").trim();
-  if (configured) return configured;
+  const isVercel = process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
+  if (configured) {
+    if (isVercel && !path.isAbsolute(configured)) {
+      const normalized = configured.replace(/^[./\\]+/, "");
+      return path.join("/tmp", normalized || path.join("data", "admin"));
+    }
+    return configured;
+  }
 
   // Vercel serverless runtime file system is read-only except /tmp.
-  if (process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV)) {
+  if (isVercel) {
     return path.join("/tmp", "data", "admin");
   }
 
