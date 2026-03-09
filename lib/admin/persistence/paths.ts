@@ -1,33 +1,22 @@
 import path from "path";
 
-function isReadOnlyServerlessRuntime(): boolean {
-  const cwd = process.cwd();
-  return (
-    process.env.VERCEL === "1" ||
-    Boolean(process.env.VERCEL_ENV) ||
-    Boolean(process.env.LAMBDA_TASK_ROOT) ||
-    cwd === "/var/task" ||
-    cwd.startsWith("/var/task/")
-  );
+function remapReadOnlyRoot(root: string): string {
+  const normalized = path.resolve(root);
+  if (normalized === "/var/task" || normalized.startsWith("/var/task/")) {
+    const relative = path.relative("/var/task", normalized);
+    return path.join("/tmp", relative);
+  }
+  return normalized;
 }
 
 export function getAdminDataRoot(): string {
   const configured = (process.env.ADMIN_DATA_DIR || "").trim();
-  const isServerless = isReadOnlyServerlessRuntime();
   if (configured) {
-    if (isServerless && !path.isAbsolute(configured)) {
-      const normalized = configured.replace(/^[./\\]+/, "");
-      return path.join("/tmp", normalized || path.join("data", "admin"));
-    }
-    return configured;
+    const resolvedConfigured = path.isAbsolute(configured) ? configured : path.resolve(process.cwd(), configured);
+    return remapReadOnlyRoot(resolvedConfigured);
   }
 
-  // Vercel serverless runtime file system is read-only except /tmp.
-  if (isServerless) {
-    return path.join("/tmp", "data", "admin");
-  }
-
-  return path.join(process.cwd(), "data", "admin");
+  return remapReadOnlyRoot(path.join(process.cwd(), "data", "admin"));
 }
 
 export function getStorePath(): string {

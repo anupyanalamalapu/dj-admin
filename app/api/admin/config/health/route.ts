@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApiSession } from "@/lib/admin/auth/api-auth";
 import { getBootstrapStatus } from "@/lib/admin/auth/session";
 import { getRuntimeConfigDiagnostics } from "@/lib/admin/config/runtime-config";
+import { getAdminDataRoot } from "@/lib/admin/persistence/paths";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const unauthorized = await requireAdminApiSession(request);
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       sessionSecretConfigured: diagnostics.auth.sessionSecretConfigured,
       sessionSecretStrong: diagnostics.auth.sessionSecretStrong,
       storageBackend: diagnostics.auth.storageBackend,
+      dataRoot: getAdminDataRoot(),
     },
     ai: {
       enabled: diagnostics.ai.enabled,
