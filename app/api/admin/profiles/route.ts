@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
-  const unauthorized = requireAdminApiSession(request);
+  const unauthorized = await requireAdminApiSession(request);
   if (unauthorized) return unauthorized;
 
   const profiles = await listProfiles();

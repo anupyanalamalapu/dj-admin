@@ -3,7 +3,7 @@ import { getCookieName, getSessionCookieOptions, revokeSessionToken } from "@/li
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const token = request.cookies.get(getCookieName())?.value;
-  revokeSessionToken(token);
+  await revokeSessionToken(token);
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set({

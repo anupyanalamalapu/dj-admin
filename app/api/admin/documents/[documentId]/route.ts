@@ -21,7 +21,7 @@ export async function GET(
   request: NextRequest,
   context: { params: { documentId: string } }
 ): Promise<NextResponse> {
-  const unauthorized = requireAdminApiSession(request);
+  const unauthorized = await requireAdminApiSession(request);
   if (unauthorized) return unauthorized;
 
   const store = await readStore();
@@ -51,4 +51,3 @@ export async function GET(
     return NextResponse.json({ error: "Document file could not be read." }, { status: 404 });
   }
 }
-

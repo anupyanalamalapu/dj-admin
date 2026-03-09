@@ -36,6 +36,7 @@ export interface RuntimeConfigDiagnostics {
     bootstrapTokenStrong: boolean;
     sessionSecretConfigured: boolean;
     sessionSecretStrong: boolean;
+    storageBackend: "postgres" | "sqlite";
   };
   ai: {
     enabled: boolean;
@@ -124,6 +125,7 @@ export function validateAuthRuntimeConfig(): RuntimeConfigValidation {
   const auth = getAdminAuthEnvConfig();
   const errors: string[] = [];
   const warnings: string[] = [];
+  const hasPostgresUrl = Boolean(readEnv("DATABASE_URL") || readEnv("POSTGRES_URL"));
 
   if (!auth.sessionSecret) {
     errors.push("ADMIN_SESSION_SECRET is required.");
@@ -133,6 +135,10 @@ export function validateAuthRuntimeConfig(): RuntimeConfigValidation {
 
   if (auth.bootstrapToken && auth.bootstrapToken.length < 16) {
     warnings.push("ADMIN_BOOTSTRAP_TOKEN should be at least 16 characters.");
+  }
+
+  if (process.env.NODE_ENV === "production" && !hasPostgresUrl) {
+    errors.push("DATABASE_URL (or POSTGRES_URL) is required in production for auth/session storage.");
   }
 
   return { errors, warnings };
@@ -172,6 +178,7 @@ export function getRuntimeConfigDiagnostics(): RuntimeConfigDiagnostics {
       bootstrapTokenStrong: auth.bootstrapToken.length >= 16,
       sessionSecretConfigured: Boolean(auth.sessionSecret),
       sessionSecretStrong: auth.sessionSecret.length >= 32,
+      storageBackend: Boolean(readEnv("DATABASE_URL") || readEnv("POSTGRES_URL")) ? "postgres" : "sqlite",
     },
     ai: {
       enabled: ai.enabled,

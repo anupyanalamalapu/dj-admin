@@ -4,10 +4,10 @@ import { getBootstrapStatus } from "@/lib/admin/auth/session";
 import { getRuntimeConfigDiagnostics } from "@/lib/admin/config/runtime-config";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const unauthorized = requireAdminApiSession(request);
+  const unauthorized = await requireAdminApiSession(request);
   if (unauthorized) return unauthorized;
 
-  const bootstrap = getBootstrapStatus();
+  const bootstrap = await getBootstrapStatus();
   const diagnostics = getRuntimeConfigDiagnostics();
 
   return NextResponse.json({
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       bootstrapTokenConfigured: diagnostics.auth.bootstrapTokenConfigured,
       sessionSecretConfigured: diagnostics.auth.sessionSecretConfigured,
       sessionSecretStrong: diagnostics.auth.sessionSecretStrong,
+      storageBackend: diagnostics.auth.storageBackend,
     },
     ai: {
       enabled: diagnostics.ai.enabled,

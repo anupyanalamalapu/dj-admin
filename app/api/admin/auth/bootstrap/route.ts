@@ -3,7 +3,7 @@ import { bootstrapAdminUser, getBootstrapStatus } from "@/lib/admin/auth/session
 import { validateAuthRuntimeConfig } from "@/lib/admin/config/runtime-config";
 
 export async function GET(): Promise<NextResponse> {
-  return NextResponse.json(getBootstrapStatus());
+  return NextResponse.json(await getBootstrapStatus());
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
-  const result = bootstrapAdminUser({
+  const result = await bootstrapAdminUser({
     bootstrapToken,
     username,
     password,

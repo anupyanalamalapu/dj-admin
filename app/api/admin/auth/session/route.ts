@@ -3,7 +3,7 @@ import { getCookieName, getSessionCookieOptions, verifySessionToken } from "@/li
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const token = request.cookies.get(getCookieName())?.value;
-  const session = verifySessionToken(token);
+  const session = await verifySessionToken(token);
 
   if (!session) {
     return NextResponse.json({ authenticated: false }, { status: 401 });

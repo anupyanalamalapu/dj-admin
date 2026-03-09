@@ -11,7 +11,7 @@ const VALID_KINDS: ChecklistProofKind[] = ["signed_contract", "deposit_proof", "
 
 export async function POST(request: NextRequest, context: { params: { eventId: string } }) {
   try {
-    const unauthorized = requireAdminApiSession(request);
+    const unauthorized = await requireAdminApiSession(request);
     if (unauthorized) return unauthorized;
 
     const formData = await request.formData();

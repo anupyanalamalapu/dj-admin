@@ -4,7 +4,7 @@ import AdminNav from "@/components/admin/AdminNav";
 import { getAdminSession } from "@/lib/admin/auth/guard";
 
 export default async function AdminProtectedLayout({ children }: { children: ReactNode }) {
-  const session = getAdminSession();
+  const session = await getAdminSession();
   if (!session) {
     redirect("/admin/login");
   }

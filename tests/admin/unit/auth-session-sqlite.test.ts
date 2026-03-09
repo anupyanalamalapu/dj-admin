@@ -35,6 +35,8 @@ async function setupEnv(): Promise<string> {
   process.env.ADMIN_BOOTSTRAP_TOKEN = "bootstrap-token-1234567890";
   process.env.ADMIN_SESSION_SECRET = "session-secret-1234567890-abcdefghij";
   process.env.NODE_ENV = "test";
+  delete process.env.DATABASE_URL;
+  delete process.env.POSTGRES_URL;
   return tempDir;
 }
 
@@ -42,7 +44,7 @@ describe("admin auth sqlite", () => {
   it("allows bootstrap only when no users exist", async () => {
     await setupEnv();
 
-    const first = bootstrapAdminUser({
+    const first = await bootstrapAdminUser({
       bootstrapToken: process.env.ADMIN_BOOTSTRAP_TOKEN || "",
       username: "admin",
       password: strongPassword(),
@@ -50,7 +52,7 @@ describe("admin auth sqlite", () => {
     assert.equal(first.ok, true);
     assert.equal(first.status, 201);
 
-    const second = bootstrapAdminUser({
+    const second = await bootstrapAdminUser({
       bootstrapToken: process.env.ADMIN_BOOTSTRAP_TOKEN || "",
       username: "admin2",
       password: strongPassword(),
@@ -61,7 +63,7 @@ describe("admin auth sqlite", () => {
 
   it("enforces password policy at bootstrap", async () => {
     await setupEnv();
-    const weak = bootstrapAdminUser({
+    const weak = await bootstrapAdminUser({
       bootstrapToken: process.env.ADMIN_BOOTSTRAP_TOKEN || "",
       username: "admin",
       password: "weakpass123",
@@ -73,7 +75,7 @@ describe("admin auth sqlite", () => {
 
   it("handles login success and failure with lockout + retryAfter", async () => {
     await setupEnv();
-    const created = bootstrapAdminUser({
+    const created = await bootstrapAdminUser({
       bootstrapToken: process.env.ADMIN_BOOTSTRAP_TOKEN || "",
       username: "admin",
       password: strongPassword(),
@@ -81,19 +83,19 @@ describe("admin auth sqlite", () => {
     assert.equal(created.ok, true);
 
     for (let i = 0; i < 4; i += 1) {
-      const failed = authenticateAdminCredentials("admin", "WrongPass!123", { ip: "127.0.0.1" });
+      const failed = await authenticateAdminCredentials("admin", "WrongPass!123", { ip: "127.0.0.1" });
       assert.equal(failed.ok, false);
       assert.equal(failed.status, 401);
       assert.equal(failed.error, "Invalid username or password.");
     }
 
-    const locked = authenticateAdminCredentials("admin", "WrongPass!123", { ip: "127.0.0.1" });
+    const locked = await authenticateAdminCredentials("admin", "WrongPass!123", { ip: "127.0.0.1" });
     assert.equal(locked.ok, false);
     assert.equal(locked.status, 429);
     assert.ok((locked.retryAfter || 0) > 0);
     assert.ok((locked.retryAfterSeconds || 0) > 0);
 
-    const stillLocked = authenticateAdminCredentials("admin", strongPassword(), { ip: "127.0.0.1" });
+    const stillLocked = await authenticateAdminCredentials("admin", strongPassword(), { ip: "127.0.0.1" });
     assert.equal(stillLocked.ok, false);
     assert.equal(stillLocked.status, 429);
     assert.ok((stillLocked.retryAfter || 0) > 0);
@@ -101,27 +103,27 @@ describe("admin auth sqlite", () => {
 
   it("creates verifies rotates and revokes sessions", async () => {
     await setupEnv();
-    const created = bootstrapAdminUser({
+    const created = await bootstrapAdminUser({
       bootstrapToken: process.env.ADMIN_BOOTSTRAP_TOKEN || "",
       username: "admin",
       password: strongPassword(),
     });
     assert.equal(created.ok, true);
 
-    const auth = authenticateAdminCredentials("admin", strongPassword(), { ip: "10.0.0.5" });
+    const auth = await authenticateAdminCredentials("admin", strongPassword(), { ip: "10.0.0.5" });
     assert.equal(auth.ok, true);
     assert.ok(auth.user);
 
-    const token1 = createSessionToken(auth.user!, { ip: "10.0.0.5", userAgent: "test-agent" });
-    const verified1 = verifySessionToken(token1);
+    const token1 = await createSessionToken(auth.user!, { ip: "10.0.0.5", userAgent: "test-agent" });
+    const verified1 = await verifySessionToken(token1);
     assert.equal(verified1?.username, "admin");
 
-    const token2 = createSessionToken(auth.user!, { ip: "10.0.0.5", userAgent: "test-agent" });
-    assert.equal(verifySessionToken(token1), null);
-    assert.equal(verifySessionToken(token2)?.username, "admin");
+    const token2 = await createSessionToken(auth.user!, { ip: "10.0.0.5", userAgent: "test-agent" });
+    assert.equal(await verifySessionToken(token1), null);
+    assert.equal((await verifySessionToken(token2))?.username, "admin");
 
-    revokeSessionToken(token2);
-    assert.equal(verifySessionToken(token2), null);
+    await revokeSessionToken(token2);
+    assert.equal(await verifySessionToken(token2), null);
   });
 
   it("migrates legacy JSON auth store into sqlite with backup", async () => {
@@ -169,13 +171,13 @@ describe("admin auth sqlite", () => {
     };
     await fs.writeFile(legacyFile, JSON.stringify(legacy, null, 2), "utf8");
 
-    const bootstrap = getBootstrapStatus();
+    const bootstrap = await getBootstrapStatus();
     assert.equal(bootstrap.needsBootstrap, false);
 
-    const auth = authenticateAdminCredentials("legacyadmin", "LegacyPass!123", { ip: "127.0.0.1" });
+    const auth = await authenticateAdminCredentials("legacyadmin", "LegacyPass!123", { ip: "127.0.0.1" });
     assert.equal(auth.ok, true);
 
-    const migratedSession = verifySessionToken(token);
+    const migratedSession = await verifySessionToken(token);
     assert.equal(migratedSession?.username, "legacyadmin");
 
     const dbPath = getAuthDbPath();

@@ -8,6 +8,7 @@ import {
 
 describe("runtime config validator", () => {
   it("fails when session secret is missing or too short", () => {
+    process.env.NODE_ENV = "test";
     process.env.ADMIN_SESSION_SECRET = "";
     let validation = validateAuthRuntimeConfig();
     assert.ok(validation.errors.some((item) => item.includes("ADMIN_SESSION_SECRET is required")));
@@ -18,6 +19,7 @@ describe("runtime config validator", () => {
   });
 
   it("requires OPENAI_API_KEY when AI is enabled", () => {
+    process.env.NODE_ENV = "test";
     process.env.ADMIN_ENABLE_CODEX_AI = "true";
     process.env.OPENAI_API_KEY = "";
     const aiValidation = validateAiRuntimeConfig();
@@ -25,8 +27,10 @@ describe("runtime config validator", () => {
   });
 
   it("returns healthy diagnostics for valid config", () => {
+    process.env.NODE_ENV = "test";
     process.env.ADMIN_BOOTSTRAP_TOKEN = "bootstrap-token-1234567890";
     process.env.ADMIN_SESSION_SECRET = "session-secret-1234567890-abcdefghij";
+    process.env.DATABASE_URL = "postgres://user:pass@localhost:5432/app";
     process.env.ADMIN_ENABLE_CODEX_AI = "true";
     process.env.OPENAI_API_KEY = "sk-test123";
     process.env.ADMIN_CODEX_MODEL_EXTRACT = "gpt-4.1-mini";

@@ -10,7 +10,7 @@ export async function GET(
   request: NextRequest,
   context: { params: { eventId: string } }
 ): Promise<NextResponse> {
-  const unauthorized = requireAdminApiSession(request);
+  const unauthorized = await requireAdminApiSession(request);
   if (unauthorized) return unauthorized;
 
   const snapshot = await getWorkspaceByEventId(context.params.eventId);
@@ -24,7 +24,7 @@ export async function PATCH(
   request: NextRequest,
   context: { params: { eventId: string } }
 ): Promise<NextResponse> {
-  const unauthorized = requireAdminApiSession(request);
+  const unauthorized = await requireAdminApiSession(request);
   if (unauthorized) return unauthorized;
 
   let body: Record<string, unknown> = {};
@@ -58,7 +58,7 @@ export async function DELETE(
   request: NextRequest,
   context: { params: { eventId: string } }
 ): Promise<NextResponse> {
-  const unauthorized = requireAdminApiSession(request);
+  const unauthorized = await requireAdminApiSession(request);
   if (unauthorized) return unauthorized;
 
   try {

@@ -10,7 +10,7 @@ export async function GET(
   request: NextRequest,
   context: { params: { clientId: string } }
 ): Promise<NextResponse> {
-  const unauthorized = requireAdminApiSession(request);
+  const unauthorized = await requireAdminApiSession(request);
   if (unauthorized) return unauthorized;
 
   const profile = await getProfileByClientId(context.params.clientId);

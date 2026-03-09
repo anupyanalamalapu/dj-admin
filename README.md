@@ -19,7 +19,7 @@ This is an extracted copy of the admin system from the main DJ website repo, pac
 - Next.js 14 (App Router)
 - React 18 + TypeScript
 - Tailwind CSS
-- Local JSON/files + SQLite (`data/admin/store/auth.db`)
+- Local JSON/files + Postgres auth storage (SQLite fallback for local dev)
 
 ## Quick Start
 
@@ -70,7 +70,7 @@ curl -X POST "http://localhost:3000/api/admin/auth/bootstrap" \
 
 After bootstrap:
 
-- Password is stored as a **scrypt hash** in SQLite (`data/admin/store/auth.db`)
+- Password is stored as a **scrypt hash** in auth storage (Postgres in deploy environments)
 - Sessions are server-side persisted and cookie-backed
 - Login route is rate-limited with temporary lockout and `retryAfter`
 - Session rotation is enforced on successful login (old sessions are revoked)
@@ -83,6 +83,7 @@ Use this baseline:
 ADMIN_BOOTSTRAP_TOKEN=replace-with-random-bootstrap-token
 ADMIN_SESSION_SECRET=replace-with-random-session-secret
 ADMIN_DATA_DIR=./data/admin
+DATABASE_URL=
 
 ADMIN_ENABLE_CODEX_AI=true
 OPENAI_API_KEY=sk-your-key-here
@@ -111,7 +112,8 @@ Notes:
 By default, runtime data is stored in:
 
 - `data/admin/store/admin-store.json` (workspace/client/event state)
-- `data/admin/store/auth.db` (users, sessions, login attempts, auth audit)
+- Auth tables in Postgres when `DATABASE_URL`/`POSTGRES_URL` is set
+- `data/admin/store/auth.db` fallback only when Postgres env vars are absent (local dev)
 - `data/admin/uploads/` (uploaded files)
 - `data/admin/contracts/` (generated contracts/artifacts)
 - `data/admin/clients/client_{id}.md` (client memory markdown)
@@ -123,16 +125,16 @@ Repository safety:
 - Do not commit runtime files under `data/admin/store/*`.
 - Keep only `data/admin/store/.gitkeep` in git.
 
-## Auth Migration (Legacy JSON -> SQLite)
+## Auth Migration (Legacy JSON -> DB)
 
 On first auth access, the app performs an idempotent startup migration:
 
 - Reads legacy `data/admin/store/admin-auth.json` if present
 - Backs it up to `data/admin/store/admin-auth.json.backup-<timestamp>.json`
-- Migrates users, sessions, and rate-limit records into SQLite
+- Migrates users, sessions, and rate-limit records into the active auth backend
 - Marks migration complete so repeated startups do not re-import
 
-If legacy JSON does not exist, startup initializes SQLite schema only.
+If legacy JSON does not exist, startup initializes auth schema only.
 
 ## AI / OCR Configuration
 

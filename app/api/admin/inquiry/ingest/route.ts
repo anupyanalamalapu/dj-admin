@@ -9,7 +9,7 @@ export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   try {
-    const unauthorized = requireAdminApiSession(request);
+    const unauthorized = await requireAdminApiSession(request);
     if (unauthorized) return unauthorized;
 
     await ensureAdminDataLayout();

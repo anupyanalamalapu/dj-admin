@@ -24,7 +24,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
-  const auth = authenticateAdminCredentials(username, password, {
+  const auth = await authenticateAdminCredentials(username, password, {
     ip: request.headers.get("x-forwarded-for") || request.ip || "",
     userAgent: request.headers.get("user-agent") || "",
   });
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const token = createSessionToken(auth.user, {
+    const token = await createSessionToken(auth.user, {
       ip: request.headers.get("x-forwarded-for") || request.ip || "",
       userAgent: request.headers.get("user-agent") || "",
     });
