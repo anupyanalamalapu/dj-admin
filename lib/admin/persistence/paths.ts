@@ -1,10 +1,21 @@
 import path from "path";
 
+function isReadOnlyServerlessRuntime(): boolean {
+  const cwd = process.cwd();
+  return (
+    process.env.VERCEL === "1" ||
+    Boolean(process.env.VERCEL_ENV) ||
+    Boolean(process.env.LAMBDA_TASK_ROOT) ||
+    cwd === "/var/task" ||
+    cwd.startsWith("/var/task/")
+  );
+}
+
 export function getAdminDataRoot(): string {
   const configured = (process.env.ADMIN_DATA_DIR || "").trim();
-  const isVercel = process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
+  const isServerless = isReadOnlyServerlessRuntime();
   if (configured) {
-    if (isVercel && !path.isAbsolute(configured)) {
+    if (isServerless && !path.isAbsolute(configured)) {
       const normalized = configured.replace(/^[./\\]+/, "");
       return path.join("/tmp", normalized || path.join("data", "admin"));
     }
@@ -12,7 +23,7 @@ export function getAdminDataRoot(): string {
   }
 
   // Vercel serverless runtime file system is read-only except /tmp.
-  if (isVercel) {
+  if (isServerless) {
     return path.join("/tmp", "data", "admin");
   }
 
