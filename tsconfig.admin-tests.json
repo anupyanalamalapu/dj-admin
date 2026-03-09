@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".tmp/admin-tests",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "incremental": false,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "lib/admin/**/*.ts",
+    "tests/admin/**/*.test.ts"
+  ],
+  "exclude": ["node_modules", ".next"]
+}
