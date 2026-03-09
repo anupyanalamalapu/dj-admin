@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error && error.message ? error.message : "Failed to process inquiry.";
     const isValidationError =
       /requires at least one contact/i.test(message) ||
+      /could not map this context to a workspace/i.test(message) ||
       /workspace creation was blocked/i.test(message) ||
       /selected workspace was not found/i.test(message) ||
       /provide inquiry text or an uploaded file/i.test(message);
