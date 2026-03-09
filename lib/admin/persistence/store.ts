@@ -18,7 +18,18 @@ function getRuntimeStoreAdapter(): RuntimeStoreAdapter {
   return fileRuntimeStoreAdapter;
 }
 
+function assertProductionPostgresRuntimeStorage(): void {
+  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+  if (process.env.NODE_ENV === "production" && !isBuildPhase && !hasPostgresRuntimeStoreConfig()) {
+    throw new Error(
+      "DATABASE_URL (or POSTGRES_URL) is required in production for runtime data storage. File fallback is disabled in production."
+    );
+  }
+}
+
 export async function ensureAdminDataLayout(): Promise<void> {
+  assertProductionPostgresRuntimeStorage();
+
   if (hasPostgresRuntimeStoreConfig()) {
     return;
   }
@@ -34,11 +45,13 @@ export async function ensureAdminDataLayout(): Promise<void> {
 }
 
 export async function readStore(): Promise<AdminStore> {
+  assertProductionPostgresRuntimeStorage();
   await ensureAdminDataLayout();
   return getRuntimeStoreAdapter().read();
 }
 
 export async function writeStore(store: AdminStore): Promise<void> {
+  assertProductionPostgresRuntimeStorage();
   await ensureAdminDataLayout();
   await getRuntimeStoreAdapter().write(store);
 }

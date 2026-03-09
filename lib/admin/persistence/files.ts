@@ -26,6 +26,15 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function assertProductionPostgresFileStorage(): void {
+  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+  if (process.env.NODE_ENV === "production" && !isBuildPhase && !hasPostgresRuntimeStoreConfig()) {
+    throw new Error(
+      "DATABASE_URL (or POSTGRES_URL) is required in production for runtime file storage. File fallback is disabled in production."
+    );
+  }
+}
+
 function getConnectionString(): string {
   const direct = (process.env.DATABASE_URL || "").trim();
   if (direct) return direct;
@@ -115,6 +124,7 @@ function legacyAbsolutePath(storedPath: string): string {
 }
 
 async function writeStoredBytes(args: { key: string; bytes: Buffer; mimeType?: string }): Promise<void> {
+  assertProductionPostgresFileStorage();
   const key = normalizePosixPath(args.key);
   if (hasPostgresRuntimeStoreConfig()) {
     await withPg(async (client) => {
@@ -142,6 +152,7 @@ async function writeStoredBytes(args: { key: string; bytes: Buffer; mimeType?: s
 export async function readStoredFile(
   storedPath: string
 ): Promise<{ bytes: Buffer; mimeType?: string; sizeBytes: number } | null> {
+  assertProductionPostgresFileStorage();
   const key = normalizeStorageKey(storedPath);
 
   if (hasPostgresRuntimeStoreConfig() && key) {
@@ -187,6 +198,7 @@ export async function readStoredFile(
 }
 
 export async function deleteStoredFile(storedPath: string): Promise<void> {
+  assertProductionPostgresFileStorage();
   const key = normalizeStorageKey(storedPath);
 
   if (hasPostgresRuntimeStoreConfig() && key) {
@@ -214,6 +226,7 @@ export async function deleteStoredFile(storedPath: string): Promise<void> {
 }
 
 export async function deleteStoredFilesByPrefix(prefix: string): Promise<void> {
+  assertProductionPostgresFileStorage();
   const normalizedPrefix = normalizePosixPath(prefix);
   if (!normalizedPrefix) return;
 
