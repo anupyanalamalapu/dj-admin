@@ -3,7 +3,14 @@ import { bootstrapAdminUser, getBootstrapStatus } from "@/lib/admin/auth/session
 import { validateAuthRuntimeConfig } from "@/lib/admin/config/runtime-config";
 
 export async function GET(): Promise<NextResponse> {
-  return NextResponse.json(await getBootstrapStatus());
+  try {
+    return NextResponse.json(await getBootstrapStatus());
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to load bootstrap status." },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -30,13 +37,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
-  const result = await bootstrapAdminUser({
-    bootstrapToken,
-    username,
-    password,
-  });
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error || "Bootstrap failed." }, { status: result.status });
+  try {
+    const result = await bootstrapAdminUser({
+      bootstrapToken,
+      username,
+      password,
+    });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error || "Bootstrap failed." }, { status: result.status });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Bootstrap failed." },
+      { status: 500 },
+    );
   }
-  return NextResponse.json({ ok: true });
 }

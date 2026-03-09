@@ -1,14 +1,11 @@
 import fs from "fs";
+import { Pool } from "pg";
 import { createId } from "../utils/id";
 import { getAuthStorePath } from "../persistence/paths";
 
 type PgClient = {
   query: (sql: string, params?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }>;
   release: () => void;
-};
-
-type PgPool = {
-  connect: () => Promise<PgClient>;
 };
 
 interface LegacyAuthUserRecord {
@@ -49,7 +46,7 @@ interface LegacyAuthStore {
 
 const LEGACY_MIGRATION_KEY = "legacy_json_auth_migrated_v1";
 
-let poolPromise: Promise<PgPool> | null = null;
+let poolPromise: Promise<Pool> | null = null;
 let initPromise: Promise<void> | null = null;
 
 function nowIso(): string {
@@ -84,22 +81,16 @@ export function hasPostgresConfig(): boolean {
   return Boolean((process.env.DATABASE_URL || "").trim() || (process.env.POSTGRES_URL || "").trim());
 }
 
-async function getPgPool(): Promise<PgPool> {
+async function getPgPool(): Promise<Pool> {
   if (!poolPromise) {
-    poolPromise = (async () => {
-      const dynamicImport = new Function("specifier", "return import(specifier);") as (specifier: string) => Promise<any>;
-      const pgModule = await dynamicImport("pg");
-      const PoolCtor = pgModule.Pool;
-      if (!PoolCtor) {
-        throw new Error("pg Pool is unavailable. Ensure dependency 'pg' is installed.");
-      }
-      return new PoolCtor({
+    poolPromise = Promise.resolve(
+      new Pool({
         connectionString: getConnectionString(),
         max: 10,
         idleTimeoutMillis: 30_000,
         ssl: { rejectUnauthorized: false },
-      }) as PgPool;
-    })();
+      })
+    );
   }
   return poolPromise;
 }

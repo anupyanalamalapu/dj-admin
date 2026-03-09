@@ -24,10 +24,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
-  const auth = await authenticateAdminCredentials(username, password, {
-    ip: request.headers.get("x-forwarded-for") || request.ip || "",
-    userAgent: request.headers.get("user-agent") || "",
-  });
+  let auth;
+  try {
+    auth = await authenticateAdminCredentials(username, password, {
+      ip: request.headers.get("x-forwarded-for") || request.ip || "",
+      userAgent: request.headers.get("user-agent") || "",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Authentication failed." },
+      { status: 500 },
+    );
+  }
   if (!auth.ok || !auth.user) {
     const response = NextResponse.json(
       {
