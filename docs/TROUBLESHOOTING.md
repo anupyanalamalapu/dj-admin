@@ -32,7 +32,7 @@
 
 - On Vercel, runtime writable dir is `/tmp`.
 - Configure `ADMIN_DATA_DIR=/tmp/data/admin` if needed.
-- Use Postgres for durable state; `/tmp` is ephemeral and instance-local.
+- Use Postgres for durable state and file artifacts; `/tmp` is ephemeral and instance-local.
 
 ## OCR/context mapping fails for message screenshots
 

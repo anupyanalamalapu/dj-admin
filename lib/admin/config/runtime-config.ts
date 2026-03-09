@@ -37,6 +37,7 @@ export interface RuntimeConfigDiagnostics {
     sessionSecretConfigured: boolean;
     sessionSecretStrong: boolean;
     storageBackend: "postgres" | "sqlite";
+    runtimeDataBackend: "postgres" | "file";
   };
   ai: {
     enabled: boolean;
@@ -138,7 +139,7 @@ export function validateAuthRuntimeConfig(): RuntimeConfigValidation {
   }
 
   if (process.env.NODE_ENV === "production" && !hasPostgresUrl) {
-    errors.push("DATABASE_URL (or POSTGRES_URL) is required in production for auth/session storage.");
+    errors.push("DATABASE_URL (or POSTGRES_URL) is required in production for auth/session and runtime data storage.");
   }
 
   return { errors, warnings };
@@ -179,6 +180,7 @@ export function getRuntimeConfigDiagnostics(): RuntimeConfigDiagnostics {
       sessionSecretConfigured: Boolean(auth.sessionSecret),
       sessionSecretStrong: auth.sessionSecret.length >= 32,
       storageBackend: Boolean(readEnv("DATABASE_URL") || readEnv("POSTGRES_URL")) ? "postgres" : "sqlite",
+      runtimeDataBackend: Boolean(readEnv("DATABASE_URL") || readEnv("POSTGRES_URL")) ? "postgres" : "file",
     },
     ai: {
       enabled: ai.enabled,

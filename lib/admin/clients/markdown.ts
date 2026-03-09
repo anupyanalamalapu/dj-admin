@@ -1,5 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
 import {
   Client,
   Communication,
@@ -9,7 +7,7 @@ import {
   Invoice,
   Inquiry,
 } from "../types/models";
-import { getClientsDir } from "../persistence/paths";
+import { saveClientMarkdownFile } from "../persistence/files";
 
 function lineDate(value: string): string {
   return new Date(value).toISOString().slice(0, 10);
@@ -25,9 +23,6 @@ export async function updateClientMarkdown(args: {
   communications: Communication[];
 }): Promise<void> {
   const { client, events, inquiries, contracts, invoices, documents, communications } = args;
-
-  await fs.mkdir(getClientsDir(), { recursive: true });
-  const pathName = path.join(getClientsDir(), `client_${client.id}.md`);
 
   const latestEvent = [...events].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   const latestContract = latestEvent
@@ -89,5 +84,5 @@ ${inquiryList
 ${docList.map((doc) => `- ${doc.filename}`).join("\n")}
 `;
 
-  await fs.writeFile(pathName, body, "utf8");
+  await saveClientMarkdownFile({ clientId: client.id, body });
 }

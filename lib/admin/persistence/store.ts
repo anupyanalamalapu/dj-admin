@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { AdminStore } from "../types/models";
-import { getClientsDir, getContractsDir, getStorePath, getUploadsDir } from "./paths";
+import { getStorePath } from "./paths";
 import { RuntimeStoreAdapter } from "./runtime-store/adapter";
 import { fileRuntimeStoreAdapter } from "./runtime-store/file-adapter";
 import { hasPostgresRuntimeStoreConfig, postgresRuntimeStoreAdapter } from "./runtime-store/postgres-adapter";
@@ -19,13 +19,12 @@ function getRuntimeStoreAdapter(): RuntimeStoreAdapter {
 }
 
 export async function ensureAdminDataLayout(): Promise<void> {
+  if (hasPostgresRuntimeStoreConfig()) {
+    return;
+  }
+
   const storePath = getStorePath();
   await ensureDir(path.dirname(storePath));
-  await ensureDir(getClientsDir());
-  await ensureDir(getUploadsDir());
-  await ensureDir(getContractsDir());
-  await ensureDir(path.join(getContractsDir(), "generated"));
-  await ensureDir(path.join(getContractsDir(), "examples"));
 
   try {
     await fs.access(storePath);

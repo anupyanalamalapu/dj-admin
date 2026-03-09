@@ -1,5 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
 import {
   AdminStore,
   BookingStage,
@@ -28,8 +26,7 @@ import { renderContract, buildAmendmentSuggestion } from "../contracts/generate"
 import { CONTRACT_LEGAL_BODY } from "../contracts/template";
 import { invoiceFromContract, suggestInvoiceUpdates } from "../invoices/calc";
 import { updateClientMarkdown } from "../clients/markdown";
-import { saveGeneratedContract, saveUploadedFile } from "../persistence/files";
-import { getClientsDir, getContractsDir, getUploadsDir } from "../persistence/paths";
+import { deleteStoredFile, deleteStoredFilesByPrefix, saveGeneratedContract, saveUploadedFile } from "../persistence/files";
 import { runOcrAdapter } from "../inquiries/ocr-adapter";
 import { buildInquiryProcessingPayload } from "../inquiries/payload";
 import {
@@ -3468,14 +3465,6 @@ async function persistClientMarkdown(store: AdminStore, clientId: string): Promi
   });
 }
 
-async function removePathIfExists(targetPath: string): Promise<void> {
-  try {
-    await fs.rm(targetPath, { recursive: true, force: true });
-  } catch {
-    // Ignore cleanup failures so workspace deletion can still succeed.
-  }
-}
-
 export async function ingestInquiry(args: {
   messageText: string;
   uploadedFile: File | null;
@@ -4311,21 +4300,16 @@ export async function deleteWorkspace(eventId: string): Promise<boolean> {
   await writeStore(store);
 
   await Promise.all(
-    docsToDelete.map((document) => {
-      const absolutePath = path.isAbsolute(document.storedPath)
-        ? document.storedPath
-        : path.resolve(process.cwd(), document.storedPath);
-      return removePathIfExists(absolutePath);
-    })
+    docsToDelete.map((document) => deleteStoredFile(document.storedPath))
   );
 
-  await removePathIfExists(path.join(getContractsDir(), "generated", eventId));
+  await deleteStoredFilesByPrefix(`contracts/generated/${eventId}/`);
 
   if (clientStillReferenced) {
     await persistClientMarkdown(store, clientId);
   } else {
-    await removePathIfExists(path.join(getClientsDir(), `client_${clientId}.md`));
-    await removePathIfExists(path.join(getUploadsDir(), clientId));
+    await deleteStoredFile(`clients/client_${clientId}.md`);
+    await deleteStoredFilesByPrefix(`uploads/${clientId}/`);
   }
 
   return true;

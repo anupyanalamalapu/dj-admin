@@ -23,7 +23,7 @@ Optional AI variables:
 ## Postgres Notes
 
 - If your provider injects prefixed env vars (for example `STORAGE_POSTGRES_*`), also define `DATABASE_URL` or `POSTGRES_URL` directly for this app.
-- Production auth and runtime workspace state require durable Postgres connectivity.
+- Production auth, runtime workspace state, and runtime file artifacts require durable Postgres connectivity.
 
 ## Redeploy Checklist
 

@@ -1,7 +1,6 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApiSession } from "@/lib/admin/auth/api-auth";
+import { readStoredFile } from "@/lib/admin/persistence/files";
 import { readStore } from "@/lib/admin/persistence/store";
 
 export const runtime = "nodejs";
@@ -33,21 +32,17 @@ export async function GET(
     return NextResponse.json({ error: "Document path is unavailable." }, { status: 404 });
   }
 
-  const absolutePath = path.isAbsolute(doc.storedPath)
-    ? doc.storedPath
-    : path.resolve(process.cwd(), doc.storedPath);
-
-  try {
-    const bytes = await readFile(absolutePath);
-    return new NextResponse(bytes, {
-      status: 200,
-      headers: {
-        "Content-Type": doc.mimeType || "application/octet-stream",
-        "Content-Disposition": contentDisposition(doc.filename),
-        "Cache-Control": "no-store",
-      },
-    });
-  } catch {
+  const stored = await readStoredFile(doc.storedPath);
+  if (!stored) {
     return NextResponse.json({ error: "Document file could not be read." }, { status: 404 });
   }
+
+  return new NextResponse(new Uint8Array(stored.bytes), {
+    status: 200,
+    headers: {
+      "Content-Type": doc.mimeType || stored.mimeType || "application/octet-stream",
+      "Content-Disposition": contentDisposition(doc.filename),
+      "Cache-Control": "no-store",
+    },
+  });
 }

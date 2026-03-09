@@ -35,9 +35,9 @@
 - Auth/session/rate-limit data:
   - Postgres in deployed environments.
   - SQLite fallback in local/dev if Postgres URL is absent.
-- Workspace runtime state:
-  - Postgres-backed JSON blob (`admin_runtime_store`) when Postgres is configured.
-  - File-backed JSON fallback for local scenarios.
+- Workspace runtime state and file artifacts (uploads/contracts/client markdown):
+  - Postgres-backed when Postgres is configured.
+  - File-backed fallback for local scenarios.
 
 This dual-mode design keeps local setup simple while using durable storage in production.
 

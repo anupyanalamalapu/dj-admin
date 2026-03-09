@@ -20,6 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       sessionSecretConfigured: diagnostics.auth.sessionSecretConfigured,
       sessionSecretStrong: diagnostics.auth.sessionSecretStrong,
       storageBackend: diagnostics.auth.storageBackend,
+      runtimeDataBackend: diagnostics.auth.runtimeDataBackend,
       dataRoot: getAdminDataRoot(),
     },
     ai: {

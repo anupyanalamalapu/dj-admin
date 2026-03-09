@@ -12,14 +12,14 @@ This is an extracted copy of the admin system from the main DJ website repo, pac
 - Generate stage-aware draft responses
 - Generate/edit contract dynamic fields using fixed legal boilerplate
 - Track checklist actions (signed contract, deposit proof, etc.)
-- Persist all MVP data locally under `data/admin`
+- Persist all runtime data via Postgres in production (filesystem only for local dev fallback)
 
 ## Tech Stack
 
 - Next.js 14 (App Router)
 - React 18 + TypeScript
 - Tailwind CSS
-- Local JSON/files + Postgres auth storage (SQLite fallback for local dev)
+- Postgres-backed runtime + auth storage in production, with local filesystem/SQLite fallbacks for local dev
 
 ## Developer Docs
 
@@ -108,10 +108,11 @@ DATABASE_URL=
 ADMIN_ENABLE_CODEX_AI=true
 OPENAI_API_KEY=sk-your-key-here
 
+ADMIN_CODEX_MODEL=codex-mini-latest
+ADMIN_CODEX_MODEL_EMAIL=codex-5.3-latest
+ADMIN_CODEX_MODEL_AMENDMENT=codex-5.3-latest
 ADMIN_CODEX_MODEL_EXTRACT=gpt-4.1-mini
 ADMIN_CODEX_MODEL_MATCH=gpt-4.1-mini
-ADMIN_CODEX_MODEL_EMAIL=gpt-4.1
-ADMIN_CODEX_MODEL_AMENDMENT=gpt-4.1
 ADMIN_CODEX_MODEL_SUMMARY=gpt-4.1-mini
 
 ADMIN_ENABLE_AI_OCR=true
@@ -131,12 +132,13 @@ Notes:
 
 By default, runtime data is stored in:
 
-- `data/admin/store/admin-store.json` (workspace/client/event state)
-- Auth tables in Postgres when `DATABASE_URL`/`POSTGRES_URL` is set
-- `data/admin/store/auth.db` fallback only when Postgres env vars are absent (local dev)
-- `data/admin/uploads/` (uploaded files)
-- `data/admin/contracts/` (generated contracts/artifacts)
-- `data/admin/clients/client_{id}.md` (client memory markdown)
+- Production: Postgres (`DATABASE_URL`/`POSTGRES_URL`) for auth/session/workspace state and file artifacts.
+- Local dev fallback (when Postgres vars are absent):
+  - `data/admin/store/admin-store.json` (workspace/client/event state)
+  - `data/admin/store/auth.db` (auth/session fallback)
+  - `data/admin/uploads/` (uploaded files)
+  - `data/admin/contracts/` (generated contracts/artifacts)
+  - `data/admin/clients/client_{id}.md` (client memory markdown)
 
 You can override root with `ADMIN_DATA_DIR`.
 
@@ -171,6 +173,7 @@ To enable AI OCR for uploads:
 
 Optional per-service model controls:
 
+- `ADMIN_CODEX_MODEL`
 - `ADMIN_CODEX_MODEL_EXTRACT`
 - `ADMIN_CODEX_MODEL_MATCH`
 - `ADMIN_CODEX_MODEL_EMAIL`
