@@ -4,7 +4,7 @@ import { hasPostgresConfig } from "./postgres-store";
 const COOKIE_NAME = "admin_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8;
 
-function usePostgres(): boolean {
+function shouldUsePostgresStorage(): boolean {
   return hasPostgresConfig();
 }
 
@@ -31,7 +31,7 @@ export function getSessionCookieOptions() {
 }
 
 export async function getBootstrapStatus(): Promise<{ needsBootstrap: boolean; bootstrapEnabled: boolean }> {
-  if (usePostgres()) {
+  if (shouldUsePostgresStorage()) {
     return postgresSession.getBootstrapStatus();
   }
   const sqliteSession = await loadSqliteSession();
@@ -43,7 +43,7 @@ export async function bootstrapAdminUser(input: {
   username: string;
   password: string;
 }): Promise<{ ok: boolean; status: number; error?: string }> {
-  if (usePostgres()) {
+  if (shouldUsePostgresStorage()) {
     return postgresSession.bootstrapAdminUser(input);
   }
   const sqliteSession = await loadSqliteSession();
@@ -62,7 +62,7 @@ export async function authenticateAdminCredentials(
   retryAfterSeconds?: number;
   user?: { id: string; username: string };
 }> {
-  if (usePostgres()) {
+  if (shouldUsePostgresStorage()) {
     return postgresSession.authenticateAdminCredentials(username, password, meta);
   }
   const sqliteSession = await loadSqliteSession();
@@ -73,7 +73,7 @@ export async function createSessionToken(
   user: { id: string; username: string },
   meta?: { ip?: string; userAgent?: string }
 ): Promise<string> {
-  if (usePostgres()) {
+  if (shouldUsePostgresStorage()) {
     return postgresSession.createSessionToken(user, meta);
   }
   const sqliteSession = await loadSqliteSession();
@@ -81,7 +81,7 @@ export async function createSessionToken(
 }
 
 export async function revokeSessionToken(token: string | undefined): Promise<void> {
-  if (usePostgres()) {
+  if (shouldUsePostgresStorage()) {
     await postgresSession.revokeSessionToken(token);
     return;
   }
@@ -92,7 +92,7 @@ export async function revokeSessionToken(token: string | undefined): Promise<voi
 export async function verifySessionToken(
   token: string | undefined
 ): Promise<{ userId: string; username: string; exp: number } | null> {
-  if (usePostgres()) {
+  if (shouldUsePostgresStorage()) {
     return postgresSession.verifySessionToken(token);
   }
   const sqliteSession = await loadSqliteSession();

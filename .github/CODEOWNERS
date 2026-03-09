@@ -1,0 +1,6 @@
+# Replace handles as needed for your org.
+* @anupya
+
+/app/api/admin/ @anupya
+/lib/admin/ @anupya
+/tests/admin/ @anupya

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getProfileByClientId } from "@/lib/admin/orchestration/admin-service";
+import { getProfileByClientId } from "@/lib/admin/orchestration/profile-service";
 
 interface ProfilePageProps {
   params: { clientId: string };

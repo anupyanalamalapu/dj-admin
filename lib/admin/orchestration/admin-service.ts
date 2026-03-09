@@ -46,6 +46,10 @@ import {
   suggestAmendmentWithCodex,
 } from "../ai/codex-sdk";
 
+// Legacy orchestration core:
+// New imports should use domain entrypoints in `lib/admin/orchestration/*-service.ts`.
+// This file remains the implementation source while logic is progressively split by domain.
+
 const DEFAULT_BASE_RATE_PER_HOUR = 600;
 const PAYMENT_MATCH_TOLERANCE = 1;
 const CONTRACT_CHANGE_TOLERANCE = 1;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ingestInquiry } from "@/lib/admin/orchestration/admin-service";
+import { ingestInquiry } from "@/lib/admin/orchestration/inquiry-service";
 import { ensureAdminDataLayout } from "@/lib/admin/persistence/store";
 import { requireAdminApiSession } from "@/lib/admin/auth/api-auth";
 

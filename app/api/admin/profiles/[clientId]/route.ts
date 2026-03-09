@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApiSession } from "@/lib/admin/auth/api-auth";
-import { getProfileByClientId } from "@/lib/admin/orchestration/admin-service";
+import { getProfileByClientId } from "@/lib/admin/orchestration/profile-service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

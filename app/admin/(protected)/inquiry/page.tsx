@@ -1,5 +1,5 @@
 import InquiryIngestForm from "@/components/admin/InquiryIngestForm";
-import { listWorkspaces } from "@/lib/admin/orchestration/admin-service";
+import { listWorkspaces } from "@/lib/admin/orchestration/workspace-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

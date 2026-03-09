@@ -21,6 +21,15 @@ This is an extracted copy of the admin system from the main DJ website repo, pac
 - Tailwind CSS
 - Local JSON/files + Postgres auth storage (SQLite fallback for local dev)
 
+## Developer Docs
+
+- `docs/START_HERE.md` - fast onboarding and commands
+- `docs/ARCHITECTURE.md` - module boundaries and data flow
+- `docs/DOMAIN_MODEL.md` - core entities and relationships
+- `docs/DEPLOYMENT_VERCEL.md` - deploy and smoke-test checklist
+- `docs/TROUBLESHOOTING.md` - common failure patterns and fixes
+- `docs/adr/0001-runtime-store-postgres.md` - storage backend decision record
+
 ## Quick Start
 
 1. Install dependencies
@@ -50,6 +59,17 @@ npm run dev
 4. Open
 
 `http://localhost:3000/admin/login`
+
+## Contributor Workflow
+
+- Read `CONTRIBUTING.md` before opening a PR.
+- Run quality gates locally:
+
+```bash
+npm run verify
+```
+
+- CI runs lint, typecheck, tests, and build on push/PR.
 
 ## Login (Safe Bootstrap Flow)
 
@@ -198,27 +218,27 @@ Paste these into `/admin/inquiry`:
 ### 1) New inquiry
 
 ```text
-Anjali Trivedi <anjali.parth.wedding@gmail.com>
-Hey Anupya,
+Jordan Patel <jordan.patel.events@example.com>
+Hey Alex,
 
 I’m reaching out to inquire about DJ services for my wedding.
 Event type: Indian wedding ceremony + reception
-Date: May 23rd, 2027
-Location: The Rockleigh, Rockleigh, New Jersey
-Estimated guest count: ~300
+Date: September 14th, 2027
+Location: Oak & Willow Estate, Cedar Grove, New Jersey
+Estimated guest count: ~280
 Services needed: Ceremony, cocktail hour, and reception DJ/MC
 
 Best,
-Anjali Trivedi
+Jordan Patel
 ```
 
 ### 2) Follow-up timeline context (should map to same workspace)
 
 ```text
-Anjali Trivedi
+Jordan Patel
 Hey, thanks for getting back to me!
 Timeline:
-9:00-10:00am Barat
+9:00-10:00am Baraat
 10:00-12:00pm Wedding Ceremony
 6:00-7:30pm Cocktail Hour
 7:30-11:30pm Reception
@@ -228,14 +248,14 @@ I’m interested in dhol players & emcee services too.
 ### 3) Approved-style pricing response context
 
 ```text
-Hi Harshala!
+Hi Priya!
 
 Great thanks for the info! Here are standard rates:
 Sangeet (6:30 - 11:30) - $3000
 Reception (6:30 - 11:30) - $3000
 
 Best,
-Anupya
+Alex
 ```
 
 Expected behavior:

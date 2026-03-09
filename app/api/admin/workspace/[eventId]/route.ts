@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApiSession } from "@/lib/admin/auth/api-auth";
-import { deleteWorkspace, getWorkspaceByEventId, updateWorkspace } from "@/lib/admin/orchestration/admin-service";
+import { updateWorkspace } from "@/lib/admin/orchestration/contract-service";
+import { deleteWorkspace, getWorkspaceByEventId } from "@/lib/admin/orchestration/workspace-service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

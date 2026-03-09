@@ -1,5 +1,5 @@
 import WorkspacesTable from "@/components/admin/WorkspacesTable";
-import { listWorkspaces } from "@/lib/admin/orchestration/admin-service";
+import { listWorkspaces } from "@/lib/admin/orchestration/workspace-service";
 
 export default async function AdminWorkspacesPage() {
   const workspaces = await listWorkspaces();

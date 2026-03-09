@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import WorkspaceEditor from "@/components/admin/WorkspaceEditor";
-import { getWorkspaceByEventId } from "@/lib/admin/orchestration/admin-service";
+import { getWorkspaceByEventId } from "@/lib/admin/orchestration/workspace-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

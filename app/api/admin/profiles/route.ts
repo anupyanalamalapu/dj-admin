@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listProfiles } from "@/lib/admin/orchestration/admin-service";
+import { listProfiles } from "@/lib/admin/orchestration/profile-service";
 import { requireAdminApiSession } from "@/lib/admin/auth/api-auth";
 
 export const runtime = "nodejs";

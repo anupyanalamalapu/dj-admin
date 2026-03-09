@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadWorkspaceChecklistProof } from "@/lib/admin/orchestration/admin-service";
-import type { ChecklistProofKind } from "@/lib/admin/orchestration/admin-service";
+import { uploadWorkspaceChecklistProof } from "@/lib/admin/orchestration/contract-service";
+import type { ChecklistProofKind } from "@/lib/admin/orchestration/contract-service";
 import { requireAdminApiSession } from "@/lib/admin/auth/api-auth";
 
 export const runtime = "nodejs";

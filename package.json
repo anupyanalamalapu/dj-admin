@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:admin": "rm -rf .tmp/admin-tests && tsc -p tsconfig.admin-tests.json && node --test .tmp/admin-tests/tests/admin/integration/*.test.js .tmp/admin-tests/tests/admin/unit/*.test.js"
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "test:admin": "rm -rf .tmp/admin-tests && tsc -p tsconfig.admin-tests.json && node --test .tmp/admin-tests/tests/admin/integration/*.test.js .tmp/admin-tests/tests/admin/unit/*.test.js",
+    "verify": "npm run lint && npm run typecheck && npm run test:admin && npm run build"
   },
   "dependencies": {
     "framer-motion": "^11.18.2",
