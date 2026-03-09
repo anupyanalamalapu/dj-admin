@@ -1,27 +1,40 @@
-import * as sqliteSession from "./session-sqlite";
 import * as postgresSession from "./session-postgres";
 import { hasPostgresConfig } from "./postgres-store";
+
+const COOKIE_NAME = "admin_session";
+const SESSION_TTL_MS = 1000 * 60 * 60 * 8;
 
 function usePostgres(): boolean {
   return hasPostgresConfig();
 }
 
+async function loadSqliteSession() {
+  return import("./session-sqlite");
+}
+
 export function getCookieName(): string {
-  return sqliteSession.getCookieName();
+  return COOKIE_NAME;
 }
 
 export function getSessionTtlSeconds(): number {
-  return sqliteSession.getSessionTtlSeconds();
+  return Math.floor(SESSION_TTL_MS / 1000);
 }
 
 export function getSessionCookieOptions() {
-  return sqliteSession.getSessionCookieOptions();
+  return {
+    httpOnly: true as const,
+    sameSite: "strict" as const,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: getSessionTtlSeconds(),
+    path: "/" as const,
+  };
 }
 
 export async function getBootstrapStatus(): Promise<{ needsBootstrap: boolean; bootstrapEnabled: boolean }> {
   if (usePostgres()) {
     return postgresSession.getBootstrapStatus();
   }
+  const sqliteSession = await loadSqliteSession();
   return sqliteSession.getBootstrapStatus();
 }
 
@@ -33,6 +46,7 @@ export async function bootstrapAdminUser(input: {
   if (usePostgres()) {
     return postgresSession.bootstrapAdminUser(input);
   }
+  const sqliteSession = await loadSqliteSession();
   return sqliteSession.bootstrapAdminUser(input);
 }
 
@@ -51,6 +65,7 @@ export async function authenticateAdminCredentials(
   if (usePostgres()) {
     return postgresSession.authenticateAdminCredentials(username, password, meta);
   }
+  const sqliteSession = await loadSqliteSession();
   return sqliteSession.authenticateAdminCredentials(username, password, meta);
 }
 
@@ -61,6 +76,7 @@ export async function createSessionToken(
   if (usePostgres()) {
     return postgresSession.createSessionToken(user, meta);
   }
+  const sqliteSession = await loadSqliteSession();
   return sqliteSession.createSessionToken(user, meta);
 }
 
@@ -69,6 +85,7 @@ export async function revokeSessionToken(token: string | undefined): Promise<voi
     await postgresSession.revokeSessionToken(token);
     return;
   }
+  const sqliteSession = await loadSqliteSession();
   sqliteSession.revokeSessionToken(token);
 }
 
@@ -78,5 +95,6 @@ export async function verifySessionToken(
   if (usePostgres()) {
     return postgresSession.verifySessionToken(token);
   }
+  const sqliteSession = await loadSqliteSession();
   return sqliteSession.verifySessionToken(token);
 }
